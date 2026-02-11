@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: borod-bank-netpol
+  namespace: borod-bank
+spec:
+  podSelector:
+    matchLabels:
+      app: borod-bank
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    # Allow HTTP traffic on port 8080 from anywhere in the cluster
+    # Will be restricted to ingress-nginx namespace in Phase 8
+    - ports:
+      - port: 8080
+
+  egress:
+    # Allow DNS resolution
+    - ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP
+
+    # Allow connection to MySQL in the same namespace
+    - to:
+      - podSelector:
+          matchLabels:
+            app: mysql
+      ports:
+      - port: 3306
