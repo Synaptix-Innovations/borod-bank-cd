@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: borod-bank
-        image: vlad7774/borod-bank:latest
+        image: vlad7774/borod-bank:v25-720dd58b
         ports:
         - containerPort: 8080
         env:
