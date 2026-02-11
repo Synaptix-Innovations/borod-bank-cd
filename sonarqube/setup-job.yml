@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sonarqube-setup
+  namespace: sonarqube
+spec:
+  # Не перезапускать Job если уже успешно выполнен
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 5
+  template:
+    spec:
+      serviceAccountName: sonarqube-setup-sa
+      restartPolicy: OnFailure
+      containers:
+      - name: sonarqube-setup
+        image: curlimages/curl:latest
+        env:
+        - name: SONAR_URL
+          value: "http://sonarqube-service.sonarqube:9000"
+        - name: SONAR_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sonarqube-secret
+              key: SONAR_ADMIN_PASSWORD
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          set -e
+
+          echo "=== Waiting for SonarQube to be ready ==="
+          until curl -sf "${SONAR_URL}/api/system/status" | grep -q '"status":"UP"'; do
+            echo "SonarQube not ready yet, retrying in 10s..."
+            sleep 10
+          done
+          echo "SonarQube is UP!"
+
+          echo "=== Changing default admin password ==="
+          curl -sf -u admin:admin \
+            -X POST "${SONAR_URL}/api/users/change_password" \
+            -d "login=admin&previousPassword=admin&password=${SONAR_ADMIN_PASSWORD}" \
+            || echo "Password already changed, skipping"
+
+          echo "=== Creating project BorodBank ==="
+          curl -sf -u "admin:${SONAR_ADMIN_PASSWORD}" \
+            -X POST "${SONAR_URL}/api/projects/create" \
+            -d "name=BorodBank&project=BorodBank&visibility=public" \
+            || echo "Project already exists, skipping"
+
+          echo "=== Generating Jenkins token ==="
+          # set +x prevents token value from appearing in logs
+          set +x
+          TOKEN_RESPONSE=$(curl -sf -u "admin:${SONAR_ADMIN_PASSWORD}" \
+            -X POST "${SONAR_URL}/api/user_tokens/generate" \
+            -d "name=jenkins-token&login=admin")
+
+          TOKEN=$(echo "${TOKEN_RESPONSE}" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+
+          if [ -z "${TOKEN}" ]; then
+            set -x
+            echo "ERROR: Failed to generate SonarQube token"
+            exit 1
+          fi
+
+          echo "Token generated successfully (value hidden)"
+
+          echo "=== Patching jenkins-secrets with SONAR_TOKEN ==="
+          TOKEN_B64=$(echo -n "${TOKEN}" | base64)
+          unset TOKEN
+
+          # Patch the jenkins-secrets Secret in namespace jenkins
+          curl -sf \
+            -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+            -H "Content-Type: application/strategic-merge-patch+json" \
+            --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+            -X PATCH \
+            "https://kubernetes.default.svc/api/v1/namespaces/jenkins/secrets/jenkins-secrets" \
+            -d "{\"data\":{\"SONAR_TOKEN\":\"${TOKEN_B64}\"}}"
+          unset TOKEN_B64
+          set -x
+
+          echo "=== Setup complete! ==="

@@ -1,0 +1,49 @@
+# ServiceAccount для Setup Job
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sonarqube-setup-sa
+  namespace: sonarqube
+---
+# ClusterRole: права на чтение/запись Secret в namespace jenkins
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sonarqube-setup-role
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "create", "patch", "update"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get"]
+---
+# Привязка к namespace sonarqube (для чтения своего secret)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sonarqube-setup-rolebinding
+  namespace: sonarqube
+subjects:
+- kind: ServiceAccount
+  name: sonarqube-setup-sa
+  namespace: sonarqube
+roleRef:
+  kind: ClusterRole
+  name: sonarqube-setup-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Привязка к namespace jenkins (для записи SONAR_TOKEN в jenkins-secrets)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sonarqube-setup-rolebinding
+  namespace: jenkins
+subjects:
+- kind: ServiceAccount
+  name: sonarqube-setup-sa
+  namespace: sonarqube
+roleRef:
+  kind: ClusterRole
+  name: sonarqube-setup-role
+  apiGroup: rbac.authorization.k8s.io

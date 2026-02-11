@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:10.4.0
+        ports:
+        - containerPort: 3000
+        envFrom:
+        - secretRef:
+            name: grafana-secret
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 300m
+            memory: 256Mi
+        volumeMounts:
+        - name: grafana-data
+          mountPath: /var/lib/grafana
+        - name: datasources
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: dashboards-provider
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboard-springboot
+          mountPath: /var/lib/grafana/dashboards
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+      volumes:
+      - name: grafana-data
+        emptyDir: {}
+      - name: datasources
+        configMap:
+          name: grafana-datasources
+          items:
+          - key: datasource.yml
+            path: datasource.yml
+      - name: dashboards-provider
+        configMap:
+          name: grafana-dashboards-provider
+          items:
+          - key: dashboards.yml
+            path: dashboards.yml
+      - name: dashboard-springboot
+        configMap:
+          name: grafana-dashboard-springboot
+          items:
+          - key: spring-boot.json
+            path: spring-boot.json

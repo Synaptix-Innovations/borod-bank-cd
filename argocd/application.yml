@@ -19,4 +19,11 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-    - CreateNamespace=true
+      - CreateNamespace=true
+      - ServerSideApply=true
+  # Do not overwrite Secret data — values are patched manually after deploy
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /data
