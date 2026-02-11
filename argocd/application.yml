@@ -8,9 +8,8 @@ spec:
   source:
     repoURL: https://github.com/Vlad774/borod-bank-cd.git
     targetRevision: main
-    path: .
-    directory:
-      recurse: true
+    path: app
+    kustomize: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: borod-bank
