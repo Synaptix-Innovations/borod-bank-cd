@@ -1,28 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: borod-bank
+  name: app-of-apps
   namespace: argocd
+  # Finalizer ensures child Applications are deleted when this is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/Vlad774/borod-bank-cd.git
     targetRevision: main
-    path: app
-    kustomize: {}
+    path: argocd/apps
   destination:
     server: https://kubernetes.default.svc
-    namespace: borod-bank
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
-  # Do not overwrite Secret data — values are patched manually after deploy
-  ignoreDifferences:
-    - group: ""
-      kind: Secret
-      jsonPointers:
-        - /data
