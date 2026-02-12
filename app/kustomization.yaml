@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - deployment.yml
   - service.yml
+  - hpa.yml
   - pdb.yml
   - network-policy.yml
   - externalsecret-mysql.yml

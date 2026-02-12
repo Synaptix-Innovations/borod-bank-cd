@@ -11,13 +11,13 @@ data:
 
     scrape_configs:
 
-      # Scrape Prometheus itself
+      # Prometheus self-monitoring
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
 
       # Borod Bank app — autodiscovery via pod annotations
-      # Requires prometheus.io/scrape: "true" on pods
+      # Pod must have: prometheus.io/scrape="true", prometheus.io/port="8080"
       - job_name: 'borod-bank'
         kubernetes_sd_configs:
           - role: pod
@@ -27,6 +27,14 @@ data:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
             regex: "true"
+          # Use annotation path if set, else fall back to /actuator/prometheus
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+            replacement: $1
+          - target_label: __metrics_path__
+            replacement: /actuator/prometheus
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
             action: replace
             target_label: __metrics_path__
@@ -41,22 +49,13 @@ data:
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
 
-      # SonarQube metrics
-      - job_name: 'sonarqube'
-        static_configs:
-          - targets: ['sonarqube-service.sonarqube:9000']
-        metrics_path: '/api/monitoring/metrics'
-        basic_auth:
-          username: 'admin'
-          password_file: '/dev/null'
-
-      # Jenkins metrics
+      # Jenkins metrics — requires Prometheus + Micrometer plugins installed
       - job_name: 'jenkins'
         static_configs:
-          - targets: ['jenkins-service.jenkins:80']
+          - targets: ['jenkins-service.jenkins:8080']
         metrics_path: '/prometheus'
 
-      # Kubernetes nodes via kubelet
+      # Kubernetes nodes via kubelet (cadvisor container metrics)
       - job_name: 'kubernetes-nodes'
         kubernetes_sd_configs:
           - role: node
@@ -72,5 +71,22 @@ data:
         scheme: https
         tls_config:
           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+
+      # Kubernetes pods cAdvisor metrics
+      - job_name: 'kubernetes-cadvisor'
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/$1/proxy/metrics/cadvisor
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
