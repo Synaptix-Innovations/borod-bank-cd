@@ -29,7 +29,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: sonarqube-secret
-              key: SONAR_ADMIN_PASSWORD
+              key: SONARQUBE_ADMIN_PASSWORD
         resources:
           requests:
             cpu: 500m
