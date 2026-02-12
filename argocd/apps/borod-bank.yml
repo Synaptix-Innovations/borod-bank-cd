@@ -22,8 +22,9 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+  # Secrets are managed by ESO — ArgoCD should not override them
   ignoreDifferences:
-    - group: ""
-      kind: Secret
+    - group: "external-secrets.io"
+      kind: ExternalSecret
       jsonPointers:
-        - /data
+        - /status
