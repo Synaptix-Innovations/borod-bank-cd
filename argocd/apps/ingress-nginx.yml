@@ -20,6 +20,9 @@ spec:
               service.beta.kubernetes.io/aws-load-balancer-type: "external"
               service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
               service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+          # Required for ArgoCD ssl-passthrough ingress
+          extraArgs:
+            enable-ssl-passthrough: ""
           metrics:
             enabled: true
           config:
