@@ -32,7 +32,10 @@ spec:
         - containerPort: 8080
         env:
         - name: SPRING_DATASOURCE_URL
-          value: jdbc:mysql://mysql-service:3306/borodbankdb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: SPRING_DATASOURCE_URL
         - name: SPRING_DATASOURCE_USERNAME
           valueFrom:
             secretKeyRef:
