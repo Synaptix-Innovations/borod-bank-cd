@@ -13,7 +13,7 @@ spec:
 
   ingress:
     # Allow HTTP traffic on port 8080 from anywhere in the cluster
-    # Will be restricted to ingress-nginx namespace in Phase 8
+    # Will be restricted to ingress-nginx namespace in Step 7
     - ports:
       - port: 8080
 
@@ -25,10 +25,9 @@ spec:
       - port: 53
         protocol: TCP
 
-    # Allow connection to MySQL in the same namespace
+    # Allow connection to RDS in private VPC subnets (10.0.10-11.0/24)
     - to:
-      - podSelector:
-          matchLabels:
-            app: mysql
+      - ipBlock:
+          cidr: 10.0.0.0/16
       ports:
       - port: 3306
