@@ -26,6 +26,18 @@ spec:
           volumeMounts:
             - name: jenkins-data
               mountPath: /var/jenkins_home
+        - name: wait-for-secrets
+          image: bitnami/kubectl:1.31
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for jenkins-secrets to be synced by ESO..."
+              until kubectl get secret jenkins-secrets -n jenkins > /dev/null 2>&1; do
+                echo "Secret not ready, retrying in 5s..."
+                sleep 5
+              done
+              echo "jenkins-secrets is ready."
       containers:
         - name: jenkins
           image: vlad7774/jenkins-borod-bank:latest
@@ -37,10 +49,6 @@ spec:
           envFrom:
             - secretRef:
                 name: jenkins-secrets
-          # TODO Step 9: replace DOCKER_HOST + dind sidecar with Kaniko
-          env:
-            - name: DOCKER_HOST
-              value: tcp://localhost:2375
           resources:
             requests:
               cpu: 500m
@@ -65,28 +73,7 @@ spec:
             initialDelaySeconds: 60
             periodSeconds: 15
             failureThreshold: 3
-        # TODO Step 9: remove dind — replace with Kaniko ephemeral pod agent
-        - name: dind
-          image: docker:27-dind
-          securityContext:
-            privileged: true
-            runAsUser: 0
-          env:
-            - name: DOCKER_TLS_CERTDIR
-              value: ""
-          resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
-            limits:
-              cpu: 1000m
-              memory: 1Gi
-          volumeMounts:
-            - name: dind-storage
-              mountPath: /var/lib/docker
       volumes:
         - name: jenkins-data
           persistentVolumeClaim:
             claimName: jenkins-pvc
-        - name: dind-storage
-          emptyDir: {}
