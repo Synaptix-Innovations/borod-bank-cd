@@ -62,18 +62,25 @@ spec:
         - name: tmp
           mountPath: /tmp
         # Spring Boot readiness/liveness as separate probes (best practice)
+        startupProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 12
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
             port: 8080
-          initialDelaySeconds: 30
+          initialDelaySeconds: 0
           periodSeconds: 10
           failureThreshold: 3
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
             port: 8080
-          initialDelaySeconds: 45
+          initialDelaySeconds: 0
           periodSeconds: 15
           failureThreshold: 3
       volumes:
