@@ -21,7 +21,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: sonarqube-secret
-              key: SONAR_ADMIN_PASSWORD
+              key: SONARQUBE_ADMIN_PASSWORD
         command: ["/bin/sh", "-c"]
         args:
         - |
