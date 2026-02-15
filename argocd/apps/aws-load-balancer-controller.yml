@@ -19,9 +19,9 @@ spec:
           name: aws-load-balancer-controller
           annotations:
             # Get value from: terraform output lbc_role_arn
-            eks.amazonaws.com/role-arn: CHANGE_ME_LBC_ROLE_ARN
+            eks.amazonaws.com/role-arn: arn:aws:iam::951656660099:role/borod-bank-lbc-role
         region: us-east-1
-        vpcId: CHANGE_ME_VPC_ID
+        vpcId: vpc-0834328c55fc27d58
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
