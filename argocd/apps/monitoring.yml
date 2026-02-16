@@ -11,6 +11,8 @@ spec:
     repoURL: https://github.com/Vlad774/borod-bank-cd.git
     targetRevision: main
     path: monitoring
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
