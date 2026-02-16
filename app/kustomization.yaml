@@ -2,15 +2,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - deployment.yml
-  - service.yml
-  - hpa.yml
-  - pdb.yml
-  - network-policy.yml
-  - externalsecret-mysql.yml
+- deployment.yml
+- service.yml
+- hpa.yml
+- pdb.yml
+- network-policy.yml
+- externalsecret-mysql.yml
 
 # Image tag is updated automatically by Jenkins CI via:
 # kustomize edit set image vlad7774/borod-bank=vlad7774/borod-bank:<TAG>
 images:
-  - name: vlad7774/borod-bank
-    newTag: v25-720dd58b
+- name: vlad7774/borod-bank
+  newName: vlad7774/borod-bank
+  newTag: v21-9f74a2c3
