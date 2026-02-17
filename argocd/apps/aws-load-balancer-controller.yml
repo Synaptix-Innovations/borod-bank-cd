@@ -21,7 +21,7 @@ spec:
             # Get value from: terraform output lbc_role_arn
             eks.amazonaws.com/role-arn: arn:aws:iam::951656660099:role/borod-bank-lbc-role
         region: us-east-1
-        vpcId: vpc-0b4d75fa0f9719731
+        vpcId: vpc-0a2f728e0aee63c88
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
