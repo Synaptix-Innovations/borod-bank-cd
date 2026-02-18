@@ -29,3 +29,8 @@ spec:
       jsonPointers:
         - /status
         - /spec/target/deletionPolicy
+    - group: "argoproj.io"
+      kind: Rollout
+      jsonPointers:
+        - /status
+        - /spec/template/metadata/annotations/rollouts-pod-template-hash
