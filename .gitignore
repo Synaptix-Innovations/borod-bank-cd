@@ -7,3 +7,10 @@
 *.env.prod
 # Gitleaks report
 gitleaks-report.json
+
+# Secrets — never commit
+*.pem
+*.key
+*token*.txt
+*_token.txt
+*.credentials
