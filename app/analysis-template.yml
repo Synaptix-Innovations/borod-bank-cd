@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: error-rate-check
+  namespace: borod-bank
+spec:
+  metrics:
+  - name: error-rate
+    # Query runs 3 times with 30s interval → covers ~90s of canary traffic
+    interval: 30s
+    count: 3
+    # Rollback if 5xx error rate >= 5%
+    successCondition: result[0] < 0.05
+    failureLimit: 1
+    provider:
+      prometheus:
+        address: http://prometheus-service.monitoring.svc.cluster.local:9090
+        query: |
+          (
+            sum(rate(http_server_requests_seconds_count{app="borod-bank",outcome="SERVER_ERROR"}[2m]))
+            /
+            sum(rate(http_server_requests_seconds_count{app="borod-bank"}[2m]))
+          ) or on() vector(0)
