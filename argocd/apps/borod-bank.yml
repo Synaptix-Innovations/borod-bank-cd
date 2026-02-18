@@ -33,3 +33,8 @@ spec:
         - .spec.data[].remoteRef.conversionStrategy
         - .spec.data[].remoteRef.decodingStrategy
         - .spec.data[].remoteRef.metadataPolicy
+    - group: "argoproj.io"
+      kind: Rollout
+      jsonPointers:
+        - /status
+        - /spec/template/metadata/annotations/rollouts-pod-template-hash
