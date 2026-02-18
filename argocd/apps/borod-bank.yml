@@ -29,6 +29,10 @@ spec:
       jsonPointers:
         - /status
         - /spec/target/deletionPolicy
+      jqPathExpressions:
+        - .spec.data[].remoteRef.conversionStrategy
+        - .spec.data[].remoteRef.decodingStrategy
+        - .spec.data[].remoteRef.metadataPolicy
     - group: "argoproj.io"
       kind: Rollout
       jsonPointers:
