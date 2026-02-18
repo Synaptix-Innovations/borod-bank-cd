@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
 - rollout.yml
 - analysis-template.yml
+- feature-flags-configmap.yml
 - service.yml
 - hpa.yml
 - pdb.yml
