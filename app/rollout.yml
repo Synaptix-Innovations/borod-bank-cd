@@ -43,6 +43,9 @@ spec:
         image: vlad7774/borod-bank:v25-720dd58b
         ports:
         - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: feature-flags
         env:
         - name: SPRING_DATASOURCE_URL
           valueFrom:
