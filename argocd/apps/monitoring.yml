@@ -30,6 +30,10 @@ spec:
       jsonPointers:
         - /status
         - /spec/target/deletionPolicy
+      jqPathExpressions:
+        - .spec.data[].remoteRef.conversionStrategy
+        - .spec.data[].remoteRef.decodingStrategy
+        - .spec.data[].remoteRef.metadataPolicy
     - group: "apps"
       kind: StatefulSet
       jqPathExpressions:
