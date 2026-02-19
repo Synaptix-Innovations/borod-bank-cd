@@ -1,0 +1,44 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-readonly-root
+  annotations:
+    policies.kyverno.io/title: Require Read-Only Root Filesystem
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      A read-only root filesystem prevents malicious code from writing
+      to the container filesystem. This policy requires readOnlyRootFilesystem.
+spec:
+  validationFailureAction: audit  # Start with audit mode, change to enforce after testing
+  background: true
+  rules:
+  - name: check-readonly-root
+    match:
+      any:
+      - resources:
+          kinds:
+          - Deployment
+          - StatefulSet
+          - Rollout
+    exclude:
+      any:
+      - resources:
+          namespaces:
+          - kube-system
+          - kube-public
+          - kube-node-lease
+          - argocd
+          - monitoring
+          - kyverno
+          - jenkins  # Jenkins needs write access to /var/jenkins_home
+          - sonarqube  # SonarQube needs write access
+    validate:
+      message: "Root filesystem must be read-only. Mount writable paths as emptyDir volumes."
+      pattern:
+        spec:
+          template:
+            spec:
+              containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true

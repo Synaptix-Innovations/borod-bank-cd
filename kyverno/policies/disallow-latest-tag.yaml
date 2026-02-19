@@ -1,0 +1,43 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Using 'latest' tag for container images is not recommended as it makes
+      deployments non-deterministic. This policy ensures explicit version tags.
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+  - name: require-image-tag
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          - Deployment
+          - StatefulSet
+          - DaemonSet
+          - Rollout
+    exclude:
+      any:
+      - resources:
+          namespaces:
+          - kube-system
+          - kube-public
+          - kube-node-lease
+          - argocd
+          - monitoring
+          - kyverno
+    validate:
+      message: "Using 'latest' tag is not allowed. Specify explicit version (e.g., nginx:1.21.0)."
+      pattern:
+        spec:
+          =(initContainers):
+          - image: "!*:latest"
+          containers:
+          - image: "!*:latest"

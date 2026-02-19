@@ -4,7 +4,7 @@ metadata:
   name: borod-bank
   namespace: borod-bank
 spec:
-  replicas: 2
+  # replicas: 2  # Managed by HPA (see hpa.yaml)
   revisionHistoryLimit: 3
   selector:
     matchLabels:
