@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Install before app pods
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki-stack
+    targetRevision: 2.10.2
+    helm:
+      values: |
+        loki:
+          enabled: true
+          persistence:
+            enabled: false  # Store in S3, not local PVC
+          serviceAccount:
+            create: true
+            name: loki
+            annotations:
+              eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT_ID:role/borod-bank-loki-role"  # Update after terraform apply
+          config:
+            auth_enabled: false
+            server:
+              http_listen_port: 3100
+            storage_config:
+              aws:
+                s3: s3://us-east-1/borod-bank-logs-ACCOUNT_ID  # Update after terraform apply
+                s3forcepathstyle: false
+              boltdb_shipper:
+                active_index_directory: /loki/index
+                cache_location: /loki/cache
+                shared_store: s3
+            schema_config:
+              configs:
+                - from: 2024-01-01
+                  store: boltdb-shipper
+                  object_store: s3
+                  schema: v12
+                  index:
+                    prefix: loki_index_
+                    period: 24h
+            limits_config:
+              retention_period: 720h  # 30 days
+              max_query_length: 721h
+              ingestion_rate_mb: 10
+              ingestion_burst_size_mb: 20
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+
+        promtail:
+          enabled: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          config:
+            clients:
+              - url: http://loki:3100/loki/api/v1/push
+
+        grafana:
+          enabled: false  # Already installed in monitoring namespace
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

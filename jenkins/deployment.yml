@@ -59,6 +59,8 @@ spec:
           volumeMounts:
             - name: jenkins-data
               mountPath: /var/jenkins_home
+            - name: maven-cache
+              mountPath: /root/.m2
           livenessProbe:
             httpGet:
               path: /login
@@ -77,3 +79,6 @@ spec:
         - name: jenkins-data
           persistentVolumeClaim:
             claimName: jenkins-pvc
+        - name: maven-cache
+          persistentVolumeClaim:
+            claimName: jenkins-maven-cache
