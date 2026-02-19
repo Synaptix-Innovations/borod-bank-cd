@@ -1,0 +1,218 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: falco
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://falcosecurity.github.io/charts
+    chart: falco
+    targetRevision: 4.2.0
+    helm:
+      values: |
+        falco:
+          # Enable gRPC for Falcosidekick
+          grpc:
+            enabled: true
+          grpcOutput:
+            enabled: true
+          
+          # JSON output for better parsing
+          jsonOutput: true
+          jsonIncludeOutputProperty: true
+          
+          # Rules files
+          rules_file:
+            - /etc/falco/falco_rules.yaml
+            - /etc/falco/falco_rules.local.yaml
+            - /etc/falco/k8s_audit_rules.yaml
+            - /etc/falco/rules.d
+          
+          # Resource limits
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          
+          # Priority for alerts
+          priority: warning
+          
+          # Buffered output
+          bufferedOutputs: true
+        
+        # Falcosidekick for routing alerts
+        falcosidekick:
+          enabled: true
+          
+          # WebUI for viewing alerts
+          webui:
+            enabled: true
+            replicaCount: 1
+            
+            # Ingress (will enable after cert-manager is ready)
+            ingress:
+              enabled: false
+              # hosts:
+              #   - falco.vladinnovations.info
+              # tls:
+              #   - secretName: falco-tls
+              #     hosts:
+              #       - falco.vladinnovations.info
+            
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                cpu: 200m
+                memory: 256Mi
+          
+          # Configuration
+          config:
+            # Slack integration
+            slack:
+              webhookurl: ""  # Will be populated from ExternalSecret
+              minimumpriority: warning
+              messageformat: |
+                *🚨 Falco Security Alert*
+                *Priority:* {{.Priority}}
+                *Rule:* {{.Rule}}
+                *Output:* {{.Output}}
+                *Time:* {{.Time}}
+                *Hostname:* {{.Hostname}}
+                *Tags:* {{.Tags}}
+              
+              # Custom footer
+              footer: "Borod Bank Security | Falco Runtime Detection"
+            
+            # Store alerts in-memory for WebUI
+            customfields: "cluster:borod-bank-cluster"
+          
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+        
+        # Custom rules ConfigMap
+        customRules:
+          rules-borod-bank.yaml: |-
+            # Custom rules for Borod Bank application
+            
+            - rule: Unauthorized Process in Java Container
+              desc: Detect unexpected process execution in Java containers
+              condition: >
+                spawned_process and
+                container and
+                container.image.repository contains "borod-bank" and
+                not proc.name in (java, sh, bash, cat, ls, ps, grep, awk, sed)
+              output: >
+                Unexpected process started in borod-bank container
+                (user=%user.name command=%proc.cmdline container=%container.name image=%container.image.repository)
+              priority: WARNING
+              tags: [container, process, borod-bank]
+            
+            - rule: Suspicious File Access in Application
+              desc: Detect access to sensitive files outside expected paths
+              condition: >
+                open_read and
+                container and
+                container.image.repository contains "borod-bank" and
+                fd.name startswith /etc and
+                not fd.name in (/etc/hosts, /etc/resolv.conf, /etc/hostname, /etc/localtime)
+              output: >
+                Suspicious file access in borod-bank
+                (user=%user.name file=%fd.name container=%container.name command=%proc.cmdline)
+              priority: WARNING
+              tags: [filesystem, borod-bank]
+            
+            - rule: Crypto Mining Activity Detected
+              desc: Detect potential crypto mining processes
+              condition: >
+                spawned_process and
+                container and
+                proc.name in (xmrig, minerd, cpuminer, ethminer, ccminer)
+              output: >
+                Crypto mining process detected
+                (user=%user.name command=%proc.cmdline container=%container.name)
+              priority: CRITICAL
+              tags: [malware, crypto-mining]
+            
+            - rule: Privilege Escalation Attempt
+              desc: Detect attempts to escalate privileges
+              condition: >
+                spawned_process and
+                container and
+                proc.name in (sudo, su, setuid, setgid, chmod, chown) and
+                not user.name = root
+              output: >
+                Privilege escalation attempt detected
+                (user=%user.name command=%proc.cmdline container=%container.name)
+              priority: CRITICAL
+              tags: [privilege-escalation, security]
+            
+            - rule: Shell Spawned in Container
+              desc: Detect shell execution in containers (potential compromise)
+              condition: >
+                spawned_process and
+                container and
+                proc.name in (bash, sh, zsh, fish, csh, tcsh, ksh) and
+                not proc.pname in (java, jenkins, sonarqube, grafana, prometheus)
+              output: >
+                Shell spawned in container (potential compromise)
+                (user=%user.name shell=%proc.name parent=%proc.pname container=%container.name)
+              priority: WARNING
+              tags: [shell, container, security]
+            
+            - rule: Network Connection to Suspicious IP
+              desc: Detect connections to known malicious IPs (example)
+              condition: >
+                outbound and
+                container and
+                fd.sip in (192.0.2.0/24, 198.51.100.0/24)
+              output: >
+                Connection to suspicious IP detected
+                (user=%user.name ip=%fd.sip port=%fd.sport container=%container.name)
+              priority: CRITICAL
+              tags: [network, malware]
+        
+        # DaemonSet configuration (runs on each node)
+        daemonset:
+          updateStrategy:
+            type: RollingUpdate
+            rollingUpdate:
+              maxUnavailable: 1
+          
+          # Node selector (optional)
+          # nodeSelector:
+          #   kubernetes.io/os: linux
+          
+          # Tolerations for master nodes (if needed)
+          # tolerations:
+          #   - effect: NoSchedule
+          #     key: node-role.kubernetes.io/master
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: falco
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

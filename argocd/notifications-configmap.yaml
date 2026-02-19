@@ -1,0 +1,246 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+data:
+  # Slack service configuration
+  service.slack: |
+    token: $slack-token
+    
+  # Triggers
+  trigger.on-sync-status-unknown: |
+    - when: app.status.sync.status == 'Unknown'
+      send: [app-sync-status-unknown]
+  
+  trigger.on-sync-failed: |
+    - when: app.status.operationState.phase in ['Error', 'Failed']
+      send: [app-sync-failed]
+  
+  trigger.on-health-degraded: |
+    - when: app.status.health.status == 'Degraded'
+      send: [app-health-degraded]
+  
+  trigger.on-deployed: |
+    - when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
+      send: [app-deployed]
+  
+  trigger.on-out-of-sync: |
+    - when: app.status.sync.status == 'OutOfSync'
+      send: [app-out-of-sync]
+  
+  # Templates
+  template.app-sync-status-unknown: |
+    message: |
+      ⚠️ Application {{.app.metadata.name}} sync status is Unknown
+      This may indicate manual changes outside GitOps workflow.
+    slack:
+      attachments: |
+        [{
+          "title": "🔍 ArgoCD Drift Detected",
+          "color": "warning",
+          "fields": [
+            {
+              "title": "Application",
+              "value": "{{.app.metadata.name}}",
+              "short": true
+            },
+            {
+              "title": "Namespace",
+              "value": "{{.app.spec.destination.namespace}}",
+              "short": true
+            },
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Health Status",
+              "value": "{{.app.status.health.status}}",
+              "short": true
+            },
+            {
+              "title": "Action Required",
+              "value": "Check for manual changes: `kubectl diff` or review ArgoCD UI",
+              "short": false
+            }
+          ],
+          "actions": [
+            {
+              "type": "button",
+              "text": "Open in ArgoCD",
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+            }
+          ]
+        }]
+  
+  template.app-sync-failed: |
+    message: |
+      ❌ Application {{.app.metadata.name}} sync failed
+    slack:
+      attachments: |
+        [{
+          "title": "❌ ArgoCD Sync Failed",
+          "color": "danger",
+          "fields": [
+            {
+              "title": "Application",
+              "value": "{{.app.metadata.name}}",
+              "short": true
+            },
+            {
+              "title": "Namespace",
+              "value": "{{.app.spec.destination.namespace}}",
+              "short": true
+            },
+            {
+              "title": "Phase",
+              "value": "{{.app.status.operationState.phase}}",
+              "short": true
+            },
+            {
+              "title": "Message",
+              "value": "{{.app.status.operationState.message}}",
+              "short": false
+            }
+          ],
+          "actions": [
+            {
+              "type": "button",
+              "text": "View Details",
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+            }
+          ]
+        }]
+  
+  template.app-health-degraded: |
+    message: |
+      🚨 Application {{.app.metadata.name}} health is Degraded
+    slack:
+      attachments: |
+        [{
+          "title": "🚨 Application Health Degraded",
+          "color": "danger",
+          "fields": [
+            {
+              "title": "Application",
+              "value": "{{.app.metadata.name}}",
+              "short": true
+            },
+            {
+              "title": "Namespace",
+              "value": "{{.app.spec.destination.namespace}}",
+              "short": true
+            },
+            {
+              "title": "Health Status",
+              "value": "{{.app.status.health.status}}",
+              "short": true
+            },
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            }
+          ],
+          "actions": [
+            {
+              "type": "button",
+              "text": "Investigate",
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}"
+            }
+          ]
+        }]
+  
+  template.app-deployed: |
+    message: |
+      ✅ Application {{.app.metadata.name}} deployed successfully
+    slack:
+      attachments: |
+        [{
+          "title": "✅ Deployment Successful",
+          "color": "good",
+          "fields": [
+            {
+              "title": "Application",
+              "value": "{{.app.metadata.name}}",
+              "short": true
+            },
+            {
+              "title": "Namespace",
+              "value": "{{.app.spec.destination.namespace}}",
+              "short": true
+            },
+            {
+              "title": "Revision",
+              "value": "{{.app.status.sync.revision}}",
+              "short": true
+            },
+            {
+              "title": "Health",
+              "value": "{{.app.status.health.status}}",
+              "short": true
+            }
+          ]
+        }]
+  
+  template.app-out-of-sync: |
+    message: |
+      🔄 Application {{.app.metadata.name}} is OutOfSync
+      Git state differs from cluster state.
+    slack:
+      attachments: |
+        [{
+          "title": "🔄 GitOps Drift Detected",
+          "color": "warning",
+          "fields": [
+            {
+              "title": "Application",
+              "value": "{{.app.metadata.name}}",
+              "short": true
+            },
+            {
+              "title": "Namespace",
+              "value": "{{.app.spec.destination.namespace}}",
+              "short": true
+            },
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Revision",
+              "value": "{{.app.status.sync.revision}}",
+              "short": true
+            },
+            {
+              "title": "Possible Causes",
+              "value": "• Manual kubectl changes\n• Helm hooks\n• External controllers\n• Resource quotas",
+              "short": false
+            }
+          ],
+          "actions": [
+            {
+              "type": "button",
+              "text": "View Diff",
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?view=tree&resource="
+            },
+            {
+              "type": "button",
+              "text": "Sync Now",
+              "url": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=sync"
+            }
+          ]
+        }]
+  
+  # Default subscriptions (all apps)
+  defaultTriggers: |
+    - on-sync-failed
+    - on-health-degraded
+    - on-out-of-sync
+  
+  # Context
+  context: |
+    argocdUrl: https://argocd.vladinnovations.info
