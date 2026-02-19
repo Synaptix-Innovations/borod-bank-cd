@@ -1,0 +1,164 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubecost
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://kubecost.github.io/cost-analyzer
+    chart: cost-analyzer
+    targetRevision: 2.0.0
+    helm:
+      values: |
+        # Global configuration
+        global:
+          prometheus:
+            enabled: false  # Use existing Prometheus
+            fqdn: http://prometheus-service.monitoring.svc.cluster.local:9090
+          
+          grafana:
+            enabled: false  # Use existing Grafana
+            domainName: grafana-service.monitoring.svc.cluster.local
+        
+        # Kubecost configuration
+        kubecostProductConfigs:
+          clusterName: borod-bank-cluster
+          
+          # Currency
+          currencyCode: USD
+          
+          # AWS integration
+          awsServiceKeyName: kubecost-aws-key
+          awsSpotDataRegion: us-east-1
+          awsSpotDataBucket: ""
+          awsSpotDataPrefix: ""
+          
+          # Cluster info
+          clusterProfile: production
+          
+          # Cost allocation
+          labelMappingConfigs:
+            enabled: true
+            # Map labels to cost allocation
+            owner_label: owner
+            team_label: team
+            department_label: department
+            product_label: app
+            environment_label: environment
+          
+          # Discount configuration
+          discount: 0  # No discount
+          negotiatedDiscount: 0
+          
+          # Idle costs
+          idleByNode: true
+        
+        # Kubecost frontend
+        kubecostFrontend:
+          image: gcr.io/kubecost1/frontend
+          imagePullPolicy: IfNotPresent
+          
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+        
+        # Kubecost cost-model
+        kubecostModel:
+          image: gcr.io/kubecost1/cost-model
+          imagePullPolicy: IfNotPresent
+          
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          
+          # Warm cache
+          warmCache: true
+          warmSavingsCache: true
+          
+          # ETL configuration
+          etl: true
+          etlBucketConfigSecret: ""
+        
+        # Ingress configuration
+        ingress:
+          enabled: false  # Enable after cert-manager is ready
+          # className: nginx
+          # hosts:
+          #   - kubecost.vladinnovations.info
+          # tls:
+          #   - secretName: kubecost-tls
+          #     hosts:
+          #       - kubecost.vladinnovations.info
+        
+        # Service configuration
+        service:
+          type: ClusterIP
+          port: 9090
+          targetPort: 9090
+        
+        # Persistence (optional, for historical data)
+        persistentVolume:
+          enabled: false
+          # size: 10Gi
+          # storageClass: gp2
+        
+        # Network costs (optional)
+        networkCosts:
+          enabled: false
+          # podMonitor:
+          #   enabled: true
+        
+        # Reporting
+        reporting:
+          # Daily reports
+          logCollection: true
+          productAnalytics: false  # Disable telemetry
+          errorReporting: false
+          valuesReporting: false
+        
+        # Notifications (optional)
+        notifications:
+          alertConfigs:
+            enabled: false
+            # frontendUrl: https://kubecost.vladinnovations.info
+            # globalSlackWebhookUrl: ""
+        
+        # Priority class
+        priorityClassName: ""
+        
+        # Node selector
+        nodeSelector: {}
+        
+        # Tolerations
+        tolerations: []
+        
+        # Affinity
+        affinity: {}
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubecost
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

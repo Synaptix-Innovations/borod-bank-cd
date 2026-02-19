@@ -1,0 +1,114 @@
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: borod-bank-signed-images
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  # Images that must be signed
+  images:
+    - glob: "vlad7774/borod-bank:*"
+    - glob: "vlad7774/borod-bank@sha256:*"
+  
+  # Authorities (who can sign)
+  authorities:
+    - name: github-actions
+      keyless:
+        # Fulcio (Sigstore's certificate authority)
+        url: https://fulcio.sigstore.dev
+        
+        # Rekor (Sigstore's transparency log)
+        rekor:
+          url: https://rekor.sigstore.dev
+        
+        # Identities (GitHub Actions OIDC)
+        identities:
+          - issuer: https://token.actions.githubusercontent.com
+            subject: "https://github.com/Vlad774/borod-bank-ci/.github/workflows/*"
+          
+          # Alternative: specific workflow
+          # - issuer: https://token.actions.githubusercontent.com
+          #   subject: "https://github.com/Vlad774/borod-bank-ci/.github/workflows/build.yml@refs/heads/main"
+        
+        # CTLog (Certificate Transparency Log)
+        ctlog:
+          url: https://ctfe.sigstore.dev/test
+    
+    # Alternative: Key-based verification (if using cosign.key)
+    # - name: cosign-key
+    #   key:
+    #     data: |
+    #       -----BEGIN PUBLIC KEY-----
+    #       <your-public-key-here>
+    #       -----END PUBLIC KEY-----
+  
+  # Policy enforcement
+  policy:
+    # Require at least 1 signature
+    type: cue
+    data: |
+      import "time"
+      
+      // Require signature
+      predicateType: "cosign.sigstore.dev/attestation/v1"
+      
+      // Optional: Check signature timestamp (not older than 30 days)
+      before: time.Now
+      after: time.Now.Add(-30*24*time.Hour)
+---
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: allow-unsigned-system-images
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  # Allow unsigned images for system components
+  images:
+    - glob: "**"
+  
+  # Match only system namespaces
+  match:
+    - version: v1
+      resource: pods
+      namespaceSelector:
+        matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: In
+            values:
+              - kube-system
+              - kube-public
+              - kube-node-lease
+              - argocd
+              - cert-manager
+              - ingress-nginx
+              - monitoring
+              - falco
+              - chaos-mesh
+              - cosign-system
+  
+  # No authorities required (allow unsigned)
+  authorities:
+    - static:
+        action: pass
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: borod-bank
+  labels:
+    policy.sigstore.dev/include: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jenkins
+  labels:
+    policy.sigstore.dev/include: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sonarqube
+  labels:
+    policy.sigstore.dev/include: "true"

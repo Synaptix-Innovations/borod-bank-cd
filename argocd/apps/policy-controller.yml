@@ -1,0 +1,61 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: policy-controller
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://sigstore.github.io/helm-charts
+    chart: policy-controller
+    targetRevision: 0.8.0
+    helm:
+      values: |
+        webhook:
+          # Webhook configuration
+          replicaCount: 1
+          
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          
+          # Fail policy (fail-closed or fail-open)
+          failurePolicy: Fail
+          
+          # Namespaces to monitor (empty = all namespaces)
+          namespaceSelector:
+            matchExpressions:
+              - key: policy.sigstore.dev/include
+                operator: In
+                values: ["true"]
+          
+          # Logging
+          logging:
+            level: info
+        
+        # Policy configuration
+        policywebhook:
+          enabled: true
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cosign-system
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
