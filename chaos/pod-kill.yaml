@@ -1,0 +1,27 @@
+# Chaos Experiment: Pod Kill
+#
+# Kills one random borod-bank pod to verify HPA respawns it and
+# the canary Rollout recovers without user-visible downtime.
+#
+# Usage:
+#   kubectl apply  -f chaos/pod-kill.yaml   # start experiment
+#   kubectl delete -f chaos/pod-kill.yaml   # stop experiment
+#
+# Observe:
+#   kubectl get pods -n borod-bank -w
+#   kubectl get rollout borod-bank -n borod-bank
+#
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: borod-bank-pod-kill
+  namespace: chaos-testing
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+      - borod-bank
+    labelSelectors:
+      app: borod-bank
+  duration: "1m"
