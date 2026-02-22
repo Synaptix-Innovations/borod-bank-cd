@@ -1,0 +1,31 @@
+# Chaos Experiment: Network Delay
+#
+# Injects 200ms ± 50ms latency on all borod-bank pods.
+# Verifies app remains responsive under degraded network conditions.
+#
+# Usage:
+#   kubectl apply  -f chaos/network-delay.yaml   # start experiment
+#   kubectl delete -f chaos/network-delay.yaml   # stop experiment
+#
+# Observe:
+#   curl -w "\nTime: %{time_total}s\n" https://app.vladinnovations.info/actuator/health
+#   kubectl get networkpolicy -n borod-bank
+#
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: borod-bank-network-delay
+  namespace: chaos-testing
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - borod-bank
+    labelSelectors:
+      app: borod-bank
+  delay:
+    latency: 200ms
+    jitter: 50ms
+    correlation: "25"
+  duration: "5m"
