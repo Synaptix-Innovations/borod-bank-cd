@@ -1,0 +1,30 @@
+# Chaos Experiment: CPU Stress
+#
+# Loads 2 CPU workers at 80% on all borod-bank pods.
+# Verifies HPA scales out and Prometheus alert fires when CPU > 70%.
+#
+# Usage:
+#   kubectl apply  -f chaos/stress-cpu.yaml   # start experiment
+#   kubectl delete -f chaos/stress-cpu.yaml   # stop experiment
+#
+# Observe:
+#   kubectl get hpa borod-bank -n borod-bank -w
+#   kubectl top pods -n borod-bank
+#
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: borod-bank-stress-cpu
+  namespace: chaos-testing
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - borod-bank
+    labelSelectors:
+      app: borod-bank
+  stressors:
+    cpu:
+      workers: 2
+      load: 80
+  duration: "5m"
