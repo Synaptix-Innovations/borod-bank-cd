@@ -6,8 +6,8 @@ resources:
 - analysis-template.yml
 - feature-flags-configmap.yml
 - service.yml
-- hpa.yml
-- pdb.yml
+- hpa.yaml
+- pdb.yaml
 - network-policy.yml
 - externalsecret-mysql.yml
 
