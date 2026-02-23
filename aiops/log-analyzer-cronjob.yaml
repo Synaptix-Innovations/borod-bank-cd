@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: aiops-log-analyzer
+  namespace: aiops
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+          volumes:
+            - name: model-cache
+              persistentVolumeClaim:
+                claimName: ollama-model-cache
+            - name: scripts
+              configMap:
+                name: aiops-analyzer-script
+
+          initContainers:
+            # Step 1: pull model into PVC cache (skips download if already cached)
+            - name: model-pull
+              image: ollama/ollama:0.5
+              command: ["sh", "-c", "ollama pull qwen2.5-coder:1.5b"]
+              env:
+                - name: OLLAMA_MODELS
+                  value: /models
+              volumeMounts:
+                - name: model-cache
+                  mountPath: /models
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+
+            # Step 2: Ollama server (native K8s 1.29+ sidecar)
+            # restartPolicy: Always makes it run alongside containers[]
+            # and terminates automatically when analyzer exits
+            - name: ollama
+              image: ollama/ollama:0.5
+              restartPolicy: Always
+              env:
+                - name: OLLAMA_MODELS
+                  value: /models
+                - name: OLLAMA_HOST
+                  value: "0.0.0.0:11434"
+              volumeMounts:
+                - name: model-cache
+                  mountPath: /models
+              resources:
+                requests:
+                  cpu: "1"
+                  memory: 2Gi
+                limits:
+                  cpu: "2"
+                  memory: 3Gi
+              readinessProbe:
+                httpGet:
+                  path: /api/tags
+                  port: 11434
+                initialDelaySeconds: 10
+                periodSeconds: 5
+                failureThreshold: 12
+
+          containers:
+            - name: analyzer
+              image: python:3.12-slim
+              command:
+                - sh
+                - -c
+                - pip install requests --quiet && python3 /scripts/aiops_analyzer.py
+              env:
+                - name: LOKI_URL
+                  value: http://loki.loki.svc.cluster.local:3100
+                - name: OLLAMA_URL
+                  value: http://localhost:11434
+                - name: SLACK_WEBHOOK_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: aiops-slack-secret
+                      key: SLACK_WEBHOOK_URL
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
