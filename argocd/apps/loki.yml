@@ -21,14 +21,14 @@ spec:
             create: true
             name: loki
             annotations:
-              eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT_ID:role/borod-bank-loki-role"  # Update after terraform apply
+              eks.amazonaws.com/role-arn: "arn:aws:iam::951656660099:role/borod-bank-loki-role"  # Update after terraform apply
           config:
             auth_enabled: false
             server:
               http_listen_port: 3100
             storage_config:
               aws:
-                s3: s3://us-east-1/borod-bank-logs-ACCOUNT_ID  # Update after terraform apply
+                s3: s3://us-east-1/borod-bank-logs-951656660099
                 s3forcepathstyle: false
               boltdb_shipper:
                 active_index_directory: /loki/index
