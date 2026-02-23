@@ -23,6 +23,9 @@ spec:
               # Static EIPs — one per AZ. Filled by post-deploy.sh after terraform apply.
               # DNS A-records point to these IPs once and never change between deploys.
               service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "eipalloc-0f647d68babbf6270,eipalloc-04307aefc3a73aec7,eipalloc-04139a1a436b62e03"
+              # Cross-zone LB: route traffic from any AZ EIP to any healthy target pod
+              service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+          replicaCount: 2
           # Required for ArgoCD ssl-passthrough ingress
           extraArgs:
             enable-ssl-passthrough: ""
