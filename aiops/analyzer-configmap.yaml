@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aiops-analyzer-script
+  namespace: aiops
+data:
+  aiops_analyzer.py: |
+    #!/usr/bin/env python3
+    """AIOps Log Intelligence — queries Loki for errors, deduplicates,
+    analyzes with Ollama (qwen2.5-coder:1.5b), posts summary to Slack."""
+
+    import os
+    import time
+    import hashlib
+    import requests
+    from datetime import datetime, timedelta, timezone
+
+    LOKI_URL = os.environ["LOKI_URL"]
+    OLLAMA_URL = os.environ["OLLAMA_URL"]
+    SLACK_WEBHOOK_URL = os.environ["SLACK_WEBHOOK_URL"]
+
+    MODEL = "qwen2.5-coder:1.5b"
+    LOOKBACK_HOURS = 24
+    MAX_UNIQUE_ERRORS = 10
+    FINGERPRINT_WORDS = 5
+
+
+    def wait_for_ollama(timeout: int = 120) -> None:
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
+                if r.status_code == 200:
+                    print("Ollama is ready.")
+                    return
+            except Exception:
+                pass
+            time.sleep(3)
+        raise RuntimeError(f"Ollama not ready after {timeout}s")
+
+
+    def query_loki_errors() -> list[str]:
+        end = datetime.now(timezone.utc)
+        start = end - timedelta(hours=LOOKBACK_HOURS)
+
+        params = {
+            "query": '{namespace="borod-bank"} |= "ERROR"',
+            "start": str(int(start.timestamp() * 1e9)),
+            "end": str(int(end.timestamp() * 1e9)),
+            "limit": "500",
+            "direction": "backward",
+        }
+
+        r = requests.get(
+            f"{LOKI_URL}/loki/api/v1/query_range", params=params, timeout=30
+        )
+        r.raise_for_status()
+
+        logs = []
+        for stream in r.json().get("data", {}).get("result", []):
+            for _, line in stream.get("values", []):
+                logs.append(line)
+        return logs
+
+
+    def fingerprint(line: str) -> str:
+        words = line.split()[:FINGERPRINT_WORDS]
+        return hashlib.md5(" ".join(words).encode()).hexdigest()
+
+
+    def deduplicate(logs: list[str]) -> list[str]:
+        seen: set[str] = set()
+        unique = []
+        for log in logs:
+            fp = fingerprint(log)
+            if fp not in seen:
+                seen.add(fp)
+                unique.append(log)
+        return unique[:MAX_UNIQUE_ERRORS]
+
+
+    def analyze_with_ollama(logs: list[str]) -> str:
+        if not logs:
+            return "No errors found in the last 24 hours."
+
+        log_text = "\n".join(f"- {log}" for log in logs)
+        prompt = (
+            "You are a DevOps SRE. Analyze these application errors from the last 24 hours.\n"
+            "Provide: 1) Root cause summary (2-3 sentences) "
+            "2) Top 3 actionable recommendations.\n"
+            "Be concise. Plain text, no markdown.\n\n"
+            f"ERRORS:\n{log_text}"
+        )
+
+        payload = {
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0.1, "num_predict": 500},
+        }
+
+        r = requests.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=120)
+        r.raise_for_status()
+        return r.json()["response"]
+
+
+    def post_to_slack(total: int, unique: int, analysis: str) -> None:
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+        payload = {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {"type": "plain_text", "text": "AIOps Daily Log Report"},
+                },
+                {
+                    "type": "section",
+                    "fields": [
+                        {"type": "mrkdwn", "text": f"*Date:* {now}"},
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Errors (24h):* {total} ({unique} unique patterns)",
+                        },
+                    ],
+                },
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": f"*Analysis:*\n{analysis}"},
+                },
+            ]
+        }
+
+        r = requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=10)
+        r.raise_for_status()
+
+
+    def main() -> None:
+        print("Waiting for Ollama to be ready...")
+        wait_for_ollama()
+
+        print("Querying Loki for ERROR logs...")
+        logs = query_loki_errors()
+        unique_logs = deduplicate(logs)
+        print(f"Found {len(logs)} errors, {len(unique_logs)} unique patterns.")
+
+        print("Analyzing with Ollama...")
+        analysis = analyze_with_ollama(unique_logs)
+
+        print("Posting to Slack...")
+        post_to_slack(len(logs), len(unique_logs), analysis)
+
+        print("Done.")
+
+
+    if __name__ == "__main__":
+        main()
