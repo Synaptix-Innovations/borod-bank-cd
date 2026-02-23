@@ -22,7 +22,7 @@ spec:
               service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
               # Static EIPs — one per AZ. Filled by post-deploy.sh after terraform apply.
               # DNS A-records point to these IPs once and never change between deploys.
-              service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "PLACEHOLDER_FILLED_BY_POST_DEPLOY"
+              service.beta.kubernetes.io/aws-load-balancer-eip-allocations: "eipalloc-0f647d68babbf6270,eipalloc-04307aefc3a73aec7,eipalloc-04139a1a436b62e03"
           # Required for ArgoCD ssl-passthrough ingress
           extraArgs:
             enable-ssl-passthrough: ""
