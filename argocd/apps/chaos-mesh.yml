@@ -15,9 +15,10 @@ spec:
       values: |
         controllerManager:
           replicaCount: 1
+          priorityClassName: low-priority
           resources:
             requests:
-              cpu: 100m
+              cpu: 25m
               memory: 256Mi
             limits:
               cpu: 500m
@@ -26,9 +27,10 @@ spec:
         chaosDaemon:
           runtime: containerd
           socketPath: /run/containerd/containerd.sock
+          priorityClassName: low-priority
           resources:
             requests:
-              cpu: 100m
+              cpu: 25m
               memory: 256Mi
             limits:
               cpu: 500m

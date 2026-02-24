@@ -73,10 +73,10 @@ spec:
         kubecostModel:
           image: gcr.io/kubecost1/cost-model
           imagePullPolicy: IfNotPresent
-          
+
           resources:
             requests:
-              cpu: 100m
+              cpu: 50m
               memory: 256Mi
             limits:
               cpu: 500m
@@ -135,7 +135,7 @@ spec:
             # globalSlackWebhookUrl: ""
         
         # Priority class
-        priorityClassName: ""
+        priorityClassName: low-priority
         
         # Node selector
         nodeSelector: {}
