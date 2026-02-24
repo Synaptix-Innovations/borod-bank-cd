@@ -34,7 +34,7 @@ spec:
           # Resource limits
           resources:
             requests:
-              cpu: 100m
+              cpu: 50m
               memory: 256Mi
             limits:
               cpu: 500m
@@ -185,6 +185,7 @@ spec:
               tags: [network, malware]
         
         # DaemonSet configuration (runs on each node)
+        priorityClassName: low-priority
         daemonset:
           updateStrategy:
             type: RollingUpdate
