@@ -16,4 +16,4 @@ resources:
 images:
 - name: vlad7774/borod-bank
   newName: vlad7774/borod-bank
-  newTag: v12-3762a0a8
+  newTag: v13-3762a0a8
