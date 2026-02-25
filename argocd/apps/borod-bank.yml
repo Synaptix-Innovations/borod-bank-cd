@@ -38,3 +38,5 @@ spec:
       jsonPointers:
         - /status
         - /spec/template/metadata/annotations/rollouts-pod-template-hash
+      jqPathExpressions:
+        - .metadata.annotations["rollout.argoproj.io/revision"]
