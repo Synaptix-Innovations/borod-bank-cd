@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aiops-gateway-script
+  namespace: aiops
+data:
+  gateway.py: |
+    """AIOps Gateway — receives code review requests from Jenkins,
+    proxies to Ollama (qwen2.5-coder:7b), exposes Prometheus metric
+    that KEDA watches to scale Ollama 0→1."""
+
+    import os
+    import time
+    import asyncio
+    import requests
+    from fastapi import FastAPI, HTTPException, Request
+    from fastapi.responses import JSONResponse
+    from prometheus_client import Gauge, make_asgi_app
+
+    OLLAMA_URL = os.environ.get(
+        "OLLAMA_URL", "http://ollama-serve.aiops.svc.cluster.local:11434"
+    )
+    MODEL = os.environ.get("OLLAMA_MODEL", "qwen2.5-coder:7b")
+    READY_TIMEOUT = int(os.environ.get("OLLAMA_READY_TIMEOUT", "600"))
+
+    app = FastAPI(title="AIOps Gateway")
+
+    # KEDA ScaledObject watches this gauge:
+    # > 0 → scale Ollama to 1, == 0 for cooldownPeriod → scale to 0
+    pending = Gauge(
+        "aiops_gateway_pending_requests",
+        "Pending AI code review requests",
+    )
+
+    metrics_app = make_asgi_app()
+    app.mount("/metrics", metrics_app)
+
+
+    def _wait_for_ollama(timeout: int) -> None:
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            try:
+                r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
+                if r.status_code == 200:
+                    return
+            except Exception:
+                pass
+            time.sleep(10)
+        raise TimeoutError(f"Ollama not ready after {timeout}s")
+
+
+    @app.post("/review")
+    async def code_review(request: Request):
+        body = await request.json()
+        diff = body.get("diff", "").strip()
+        context = body.get("context", "")
+
+        if not diff:
+            raise HTTPException(status_code=400, detail="diff is required")
+
+        pending.inc()
+        try:
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, _wait_for_ollama, READY_TIMEOUT)
+
+            prompt = (
+                "You are a senior DevOps and Java engineer. Review this code change.\n"
+                "Provide: 1) Security issues (if any) 2) Code quality issues "
+                "3) Top 2 actionable improvements.\n"
+                "Be concise. Maximum 10 lines. Plain text.\n\n"
+                f"CONTEXT: {context}\n\nDIFF:\n{diff}"
+            )
+
+            payload = {
+                "model": MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {"temperature": 0.1, "num_predict": 300},
+            }
+
+            r = requests.post(
+                f"{OLLAMA_URL}/api/generate", json=payload, timeout=120
+            )
+            r.raise_for_status()
+            return JSONResponse({"review": r.json()["response"]})
+        finally:
+            pending.dec()
+
+
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiops-gateway
+  namespace: aiops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aiops-gateway
+  template:
+    metadata:
+      labels:
+        app: aiops-gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: gateway
+          image: python:3.12-slim
+          command:
+            - sh
+            - -c
+            - |
+              pip install fastapi uvicorn requests prometheus-client --quiet
+              python -m uvicorn gateway:app --host 0.0.0.0 --port 8080
+          workingDir: /app
+          env:
+            - name: OLLAMA_URL
+              value: http://ollama-serve.aiops.svc.cluster.local:11434
+            - name: OLLAMA_MODEL
+              value: qwen2.5-coder:7b
+            - name: OLLAMA_READY_TIMEOUT
+              value: "600"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: scripts
+              mountPath: /app
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: scripts
+          configMap:
+            name: aiops-gateway-script
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aiops-gateway
+  namespace: aiops
+spec:
+  selector:
+    app: aiops-gateway
+  ports:
+    - port: 8080
+      targetPort: 8080
