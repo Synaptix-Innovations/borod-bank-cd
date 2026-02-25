@@ -14,7 +14,7 @@ spec:
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://prometheus-operated.monitoring.svc.cluster.local:9090
+        serverAddress: http://prometheus-service.monitoring.svc.cluster.local:9090
         metricName: aiops_gateway_pending_requests
         threshold: "1"
         query: aiops_gateway_pending_requests

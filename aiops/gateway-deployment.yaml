@@ -125,6 +125,8 @@ spec:
               python -m uvicorn gateway:app --host 0.0.0.0 --port 8080
           workingDir: /app
           env:
+            - name: HOME
+              value: /tmp
             - name: OLLAMA_URL
               value: http://ollama-serve.aiops.svc.cluster.local:11434
             - name: OLLAMA_MODEL
