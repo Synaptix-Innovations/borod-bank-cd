@@ -29,6 +29,18 @@ spec:
           replicas: 1
         reportsController:
           replicas: 1
+        # Pin kubectl image used by cleanup CronJobs — bitnami/kubectl:1.28.5 is unavailable
+        cleanupJobs:
+          admissionReports:
+            image:
+              registry: docker.io
+              repository: bitnami/kubectl
+              tag: "1.31"
+          clusterAdmissionReports:
+            image:
+              registry: docker.io
+              repository: bitnami/kubectl
+              tag: "1.31"
 
   destination:
     server: https://kubernetes.default.svc
