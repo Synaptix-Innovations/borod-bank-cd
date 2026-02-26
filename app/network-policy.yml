@@ -12,22 +12,35 @@ spec:
     - Egress
 
   ingress:
-    # Allow HTTP traffic on port 8080 from anywhere in the cluster
-    # Will be restricted to ingress-nginx namespace in Step 7
-    - ports:
-      - port: 8080
+    # User traffic via NLB — only from ingress-nginx namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Prometheus scrape (/actuator/prometheus) — only from monitoring namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 8080
 
   egress:
     # Allow DNS resolution
     - ports:
-      - port: 53
-        protocol: UDP
-      - port: 53
-        protocol: TCP
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
 
     # Allow connection to RDS in private VPC subnets (10.0.10-11.0/24)
     - to:
-      - ipBlock:
-          cidr: 10.0.0.0/16
+        - ipBlock:
+            cidr: 10.0.0.0/16
       ports:
-      - port: 3306
+        - port: 3306
+          protocol: TCP
