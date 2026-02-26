@@ -5,6 +5,8 @@ metadata:
   namespace: jenkins
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: jenkins
@@ -40,7 +42,7 @@ spec:
               echo "jenkins-secrets is ready."
       containers:
         - name: jenkins
-          image: vlad7774/jenkins-borod-bank:latest
+          image: vlad7774/jenkins-borod-bank:99ebfd0
           ports:
             - containerPort: 8080
               name: web
