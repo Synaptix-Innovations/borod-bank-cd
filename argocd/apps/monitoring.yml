@@ -39,3 +39,5 @@ spec:
       jqPathExpressions:
         - .spec.volumeClaimTemplates[].spec.volumeMode
         - .spec.volumeClaimTemplates[].status
+        - .spec.persistentVolumeClaimRetentionPolicy
+        - .spec.updateStrategy.rollingUpdate.partition
