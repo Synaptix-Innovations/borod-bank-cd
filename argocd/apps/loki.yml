@@ -48,6 +48,20 @@ spec:
               max_query_length: 721h
               ingestion_rate_mb: 10
               ingestion_burst_size_mb: 20
+          # emptyDir volumes for boltdb-shipper cache and index
+          # Required because persistence.enabled=false — without these mounts
+          # loki crashes with "mkdir /loki/cache: read-only file system"
+          extraVolumes:
+            - name: loki-index
+              emptyDir: {}
+            - name: loki-cache
+              emptyDir: {}
+          extraVolumeMounts:
+            - name: loki-index
+              mountPath: /loki/index
+            - name: loki-cache
+              mountPath: /loki/cache
+
           resources:
             requests:
               cpu: 200m
