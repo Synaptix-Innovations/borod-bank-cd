@@ -66,7 +66,9 @@ spec:
       kind: MutatingWebhookConfiguration
       jqPathExpressions:
         - .webhooks[].clientConfig.caBundle
+        - .webhooks[].namespaceSelector.matchExpressions
     - group: "admissionregistration.k8s.io"
       kind: ValidatingWebhookConfiguration
       jqPathExpressions:
         - .webhooks[].clientConfig.caBundle
+        - .webhooks[].namespaceSelector.matchExpressions
