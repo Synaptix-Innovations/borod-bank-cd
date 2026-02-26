@@ -10,6 +10,8 @@ resources:
 - pdb.yaml
 - network-policy.yml
 - externalsecret-mysql.yml
+- resourcequota.yaml
+- limitrange.yaml
 
 # Image tag is updated automatically by Jenkins CI via:
 # kustomize edit set image vlad7774/borod-bank=vlad7774/borod-bank:<TAG>
