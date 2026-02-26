@@ -25,7 +25,7 @@ spec:
           initContainers:
             # Step 1: pull model into PVC cache (skips download if already cached)
             - name: model-pull
-              image: ollama/ollama:0.5
+              image: ollama/ollama:0.17.1
               command: ["sh", "-c", "ollama pull qwen2.5-coder:1.5b"]
               env:
                 - name: OLLAMA_MODELS
@@ -45,7 +45,7 @@ spec:
             # restartPolicy: Always makes it run alongside containers[]
             # and terminates automatically when analyzer exits
             - name: ollama
-              image: ollama/ollama:0.5
+              image: ollama/ollama:0.17.1
               restartPolicy: Always
               env:
                 - name: OLLAMA_MODELS
