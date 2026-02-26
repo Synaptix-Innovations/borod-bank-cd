@@ -36,8 +36,9 @@ spec:
         - .spec.data[].remoteRef.metadataPolicy
     - group: "apps"
       kind: StatefulSet
+      jsonPointers:
+        - /spec/persistentVolumeClaimRetentionPolicy
+        - /spec/updateStrategy/rollingUpdate/partition
       jqPathExpressions:
         - .spec.volumeClaimTemplates[].spec.volumeMode
         - .spec.volumeClaimTemplates[].status
-        - .spec.persistentVolumeClaimRetentionPolicy
-        - .spec.updateStrategy.rollingUpdate.partition
