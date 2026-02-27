@@ -52,7 +52,10 @@ spec:
           mountPath: /etc/grafana/provisioning/dashboards
           readOnly: true
         - name: dashboard-springboot
-          mountPath: /var/lib/grafana/dashboards
+          mountPath: /var/lib/grafana/dashboards/springboot
+          readOnly: true
+        - name: dashboard-nightly
+          mountPath: /var/lib/grafana/dashboards/nightly
           readOnly: true
         readinessProbe:
           httpGet:
@@ -91,3 +94,9 @@ spec:
           items:
           - key: spring-boot.json
             path: spring-boot.json
+      - name: dashboard-nightly
+        configMap:
+          name: grafana-dashboard-nightly
+          items:
+          - key: nightly-pipeline.json
+            path: nightly-pipeline.json
