@@ -83,8 +83,8 @@ data:
       # Jenkins metrics — requires Prometheus + Micrometer plugins installed
       - job_name: 'jenkins'
         static_configs:
-          - targets: ['jenkins-service.jenkins:8080']
-        metrics_path: '/prometheus'
+          - targets: ['jenkins-service.jenkins:80']
+        metrics_path: '/prometheus/'
 
       # Node Exporter — host-level metrics (CPU, memory, disk, network)
       - job_name: 'node-exporter'
