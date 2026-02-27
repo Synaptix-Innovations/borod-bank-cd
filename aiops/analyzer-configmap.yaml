@@ -7,36 +7,22 @@ data:
   aiops_analyzer.py: |
     #!/usr/bin/env python3
     """AIOps Log Intelligence — queries Loki for errors, deduplicates,
-    analyzes with Ollama (qwen2.5-coder:1.5b), posts summary to Slack."""
+    analyzes with Claude API (Haiku), posts summary to Slack."""
 
     import os
-    import time
     import hashlib
     import requests
+    import anthropic
     from datetime import datetime, timedelta, timezone
 
     LOKI_URL = os.environ["LOKI_URL"]
-    OLLAMA_URL = os.environ["OLLAMA_URL"]
+    ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
     SLACK_WEBHOOK_URL = os.environ["SLACK_WEBHOOK_URL"]
 
-    MODEL = "qwen2.5-coder:1.5b"
+    MODEL = "claude-haiku-4-5-20251001"
     LOOKBACK_HOURS = 24
     MAX_UNIQUE_ERRORS = 10
     FINGERPRINT_WORDS = 5
-
-
-    def wait_for_ollama(timeout: int = 120) -> None:
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            try:
-                r = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
-                if r.status_code == 200:
-                    print("Ollama is ready.")
-                    return
-            except Exception:
-                pass
-            time.sleep(3)
-        raise RuntimeError(f"Ollama not ready after {timeout}s")
 
 
     def query_loki_errors() -> list[str]:
@@ -79,29 +65,26 @@ data:
         return unique[:MAX_UNIQUE_ERRORS]
 
 
-    def analyze_with_ollama(logs: list[str]) -> str:
+    def analyze_with_claude(logs: list[str]) -> str:
         if not logs:
             return "No errors found in the last 24 hours."
 
         log_text = "\n".join(f"- {log}" for log in logs)
-        prompt = (
-            "You are a DevOps SRE. Analyze these application errors from the last 24 hours.\n"
-            "Provide: 1) Root cause summary (2-3 sentences) "
-            "2) Top 3 actionable recommendations.\n"
-            "Be concise. Plain text, no markdown.\n\n"
-            f"ERRORS:\n{log_text}"
+
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        message = client.messages.create(
+            model=MODEL,
+            max_tokens=500,
+            system=(
+                "You are a DevOps SRE. Analyze these application errors from the last 24 hours.\n"
+                "Provide: 1) Root cause summary (2-3 sentences) "
+                "2) Top 3 actionable recommendations.\n"
+                "Be concise. Plain text, no markdown."
+            ),
+            messages=[{"role": "user", "content": f"ERRORS:\n{log_text}"}],
+            temperature=0.1,
         )
-
-        payload = {
-            "model": MODEL,
-            "prompt": prompt,
-            "stream": False,
-            "options": {"temperature": 0.1, "num_predict": 500},
-        }
-
-        r = requests.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=120)
-        r.raise_for_status()
-        return r.json()["response"]
+        return message.content[0].text
 
 
     def post_to_slack(total: int, unique: int, analysis: str) -> None:
@@ -135,16 +118,13 @@ data:
 
 
     def main() -> None:
-        print("Waiting for Ollama to be ready...")
-        wait_for_ollama()
-
         print("Querying Loki for ERROR logs...")
         logs = query_loki_errors()
         unique_logs = deduplicate(logs)
         print(f"Found {len(logs)} errors, {len(unique_logs)} unique patterns.")
 
-        print("Analyzing with Ollama...")
-        analysis = analyze_with_ollama(unique_logs)
+        print("Analyzing with Claude API...")
+        analysis = analyze_with_claude(unique_logs)
 
         print("Posting to Slack...")
         post_to_slack(len(logs), len(unique_logs), analysis)
