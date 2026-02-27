@@ -57,6 +57,15 @@ spec:
         - name: dashboard-nightly
           mountPath: /var/lib/grafana/dashboards/nightly
           readOnly: true
+        - name: dashboard-app-overview
+          mountPath: /var/lib/grafana/dashboards/app-overview
+          readOnly: true
+        - name: dashboard-infra
+          mountPath: /var/lib/grafana/dashboards/infra
+          readOnly: true
+        - name: dashboard-aiops
+          mountPath: /var/lib/grafana/dashboards/aiops
+          readOnly: true
         readinessProbe:
           httpGet:
             path: /api/health
@@ -100,3 +109,21 @@ spec:
           items:
           - key: nightly-pipeline.json
             path: nightly-pipeline.json
+      - name: dashboard-app-overview
+        configMap:
+          name: grafana-dashboard-app-overview
+          items:
+          - key: app-overview.json
+            path: app-overview.json
+      - name: dashboard-infra
+        configMap:
+          name: grafana-dashboard-infra
+          items:
+          - key: infra.json
+            path: infra.json
+      - name: dashboard-aiops
+        configMap:
+          name: grafana-dashboard-aiops
+          items:
+          - key: aiops.json
+            path: aiops.json
