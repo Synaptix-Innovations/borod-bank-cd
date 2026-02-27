@@ -42,7 +42,7 @@ spec:
               echo "jenkins-secrets is ready."
       containers:
         - name: jenkins
-          image: vlad7774/jenkins-borod-bank:1846b73
+          image: vlad7774/jenkins-borod-bank:3d11c92
           ports:
             - containerPort: 8080
               name: web
