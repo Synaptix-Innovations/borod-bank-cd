@@ -74,6 +74,12 @@ data:
           - source_labels: [__meta_kubernetes_namespace]
             target_label: namespace
 
+      # Pushgateway — batch job metrics (nightly pipeline)
+      - job_name: 'pushgateway'
+        honor_labels: true
+        static_configs:
+          - targets: ['pushgateway-service.monitoring:9091']
+
       # Jenkins metrics — requires Prometheus + Micrometer plugins installed
       - job_name: 'jenkins'
         static_configs:

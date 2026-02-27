@@ -1,0 +1,256 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-nightly
+  namespace: monitoring
+data:
+  nightly-pipeline.json: |
+    {
+      "title": "Nightly Pipeline",
+      "uid": "borod-nightly",
+      "tags": ["nightly", "borod-bank", "ci"],
+      "timezone": "browser",
+      "schemaVersion": 36,
+      "version": 1,
+      "refresh": "",
+      "time": { "from": "now-30d", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Build Status (30d)",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+          "targets": [{
+            "expr": "nightly_build_status{job=\"nightly\"}",
+            "legendFormat": "Status"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                { "type": "value", "options": { "1": { "text": "SUCCESS", "color": "green" } } },
+                { "type": "value", "options": { "0.5": { "text": "UNSTABLE", "color": "yellow" } } },
+                { "type": "value", "options": { "0": { "text": "FAILURE", "color": "red" } } }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 0.5 },
+                  { "color": "green", "value": 1 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "Line Coverage %",
+          "type": "gauge",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+          "targets": [{
+            "expr": "nightly_coverage_percent{job=\"nightly\"}",
+            "legendFormat": "Coverage"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 60 },
+                  { "color": "green", "value": 80 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Mutation Score %",
+          "type": "gauge",
+          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+          "targets": [{
+            "expr": "nightly_mutation_score_percent{job=\"nightly\"}",
+            "legendFormat": "Mutation Score"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 50 },
+                  { "color": "green", "value": 70 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Unit Tests",
+          "type": "stat",
+          "gridPos": { "x": 18, "y": 0, "w": 3, "h": 6 },
+          "targets": [
+            {
+              "expr": "nightly_unit_tests_total{job=\"nightly\"} - nightly_unit_tests_failed{job=\"nightly\"}",
+              "legendFormat": "Passed"
+            },
+            {
+              "expr": "nightly_unit_tests_total{job=\"nightly\"}",
+              "legendFormat": "Total"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "Integration Tests",
+          "type": "stat",
+          "gridPos": { "x": 21, "y": 0, "w": 3, "h": 6 },
+          "targets": [
+            {
+              "expr": "nightly_integration_tests_total{job=\"nightly\"} - nightly_integration_tests_failed{job=\"nightly\"}",
+              "legendFormat": "Passed"
+            },
+            {
+              "expr": "nightly_integration_tests_total{job=\"nightly\"}",
+              "legendFormat": "Total"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 6,
+          "title": "OWASP CVEs",
+          "type": "bargauge",
+          "gridPos": { "x": 0, "y": 6, "w": 6, "h": 6 },
+          "targets": [
+            {
+              "expr": "nightly_owasp_cve_critical{job=\"nightly\"}",
+              "legendFormat": "Critical"
+            },
+            {
+              "expr": "nightly_owasp_cve_high{job=\"nightly\"}",
+              "legendFormat": "High"
+            },
+            {
+              "expr": "nightly_owasp_cve_medium{job=\"nightly\"}",
+              "legendFormat": "Medium"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 5 }
+                ]
+              }
+            }
+          },
+          "options": { "orientation": "horizontal", "displayMode": "gradient" }
+        },
+        {
+          "id": 7,
+          "title": "ZAP Findings",
+          "type": "bargauge",
+          "gridPos": { "x": 6, "y": 6, "w": 6, "h": 6 },
+          "targets": [
+            {
+              "expr": "nightly_zap_alerts_high{job=\"nightly\"}",
+              "legendFormat": "High"
+            },
+            {
+              "expr": "nightly_zap_alerts_medium{job=\"nightly\"}",
+              "legendFormat": "Medium"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1 },
+                  { "color": "red", "value": 3 }
+                ]
+              }
+            }
+          },
+          "options": { "orientation": "horizontal", "displayMode": "gradient" }
+        },
+        {
+          "id": 8,
+          "title": "Response Time p95 (trend)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 6, "w": 6, "h": 6 },
+          "targets": [{
+            "expr": "nightly_k6_p95_ms{job=\"nightly\"}",
+            "legendFormat": "p95 (ms)"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 300 },
+                  { "color": "red", "value": 500 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 9,
+          "title": "Build Duration (trend)",
+          "type": "timeseries",
+          "gridPos": { "x": 18, "y": 6, "w": 6, "h": 6 },
+          "targets": [{
+            "expr": "nightly_build_duration_seconds{job=\"nightly\"}",
+            "legendFormat": "Duration"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 1200 },
+                  { "color": "red", "value": 1800 }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
