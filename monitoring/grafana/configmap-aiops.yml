@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-aiops
+  namespace: monitoring
+data:
+  aiops.json: |
+    {
+      "title": "Borod Bank - AIOps Code Review",
+      "uid": "borod-aiops",
+      "tags": ["aiops", "borod-bank", "claude"],
+      "timezone": "browser",
+      "schemaVersion": 36,
+      "version": 1,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Gateway Status",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+          "targets": [{
+            "expr": "up{job=\"aiops\"}",
+            "legendFormat": "Gateway"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "mappings": [
+                { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } },
+                { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } }
+              ],
+              "thresholds": {
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "green", "value": 1 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "Pending Review Requests",
+          "type": "gauge",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+          "targets": [{
+            "expr": "aiops_gateway_pending_requests",
+            "legendFormat": "Pending"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "min": 0,
+              "max": 10,
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 3 },
+                  { "color": "red", "value": 7 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Pending Requests (trend)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+          "targets": [{
+            "expr": "aiops_gateway_pending_requests",
+            "legendFormat": "Pending"
+          }],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 3 },
+                  { "color": "red", "value": 7 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Gateway Pod CPU",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+          "targets": [{
+            "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"aiops\", image!=\"\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}}"
+          }],
+          "fieldConfig": { "defaults": { "unit": "short" } }
+        },
+        {
+          "id": 5,
+          "title": "Gateway Pod Memory",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+          "targets": [{
+            "expr": "sum(container_memory_working_set_bytes{namespace=\"aiops\", image!=\"\"}) by (pod)",
+            "legendFormat": "{{pod}}"
+          }],
+          "fieldConfig": { "defaults": { "unit": "bytes" } }
+        },
+        {
+          "id": 6,
+          "title": "Gateway Network Receive",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+          "targets": [{
+            "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"aiops\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}}"
+          }],
+          "fieldConfig": { "defaults": { "unit": "Bps" } }
+        },
+        {
+          "id": 7,
+          "title": "Gateway Network Transmit",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+          "targets": [{
+            "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"aiops\"}[5m])) by (pod)",
+            "legendFormat": "{{pod}}"
+          }],
+          "fieldConfig": { "defaults": { "unit": "Bps" } }
+        }
+      ]
+    }
