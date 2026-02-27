@@ -18,4 +18,4 @@ resources:
 images:
 - name: vlad7774/borod-bank
   newName: vlad7774/borod-bank
-  newTag: v4-f99d5d3d
+  newTag: v7-e0dbead7
