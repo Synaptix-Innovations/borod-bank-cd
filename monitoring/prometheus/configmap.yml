@@ -86,6 +86,24 @@ data:
           - targets: ['jenkins-service.jenkins:8080']
         metrics_path: '/prometheus'
 
+      # Node Exporter — host-level metrics (CPU, memory, disk, network)
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names: ['monitoring']
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_label_app]
+            action: keep
+            regex: node-exporter
+          - source_labels: [__meta_kubernetes_endpoint_node_name]
+            target_label: node
+
+      # Kube State Metrics — Kubernetes object state (pods, nodes, deployments)
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['kube-state-metrics-service.monitoring:8080']
+
       # Kubernetes nodes via kubelet (cadvisor container metrics)
       - job_name: 'kubernetes-nodes'
         kubernetes_sd_configs:
