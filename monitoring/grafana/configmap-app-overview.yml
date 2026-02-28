@@ -11,7 +11,7 @@ data:
       "tags": ["spring-boot", "borod-bank", "application"],
       "timezone": "browser",
       "schemaVersion": 36,
-      "version": 1,
+      "version": 2,
       "refresh": "30s",
       "time": { "from": "now-1h", "to": "now" },
       "panels": [
@@ -19,6 +19,7 @@ data:
           "id": 1,
           "title": "HTTP Request Rate",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
           "targets": [{
             "expr": "sum(rate(http_server_requests_seconds_count{application=\"borod-bank\"}[1m])) by (method, uri, status)",
@@ -30,6 +31,7 @@ data:
           "id": 2,
           "title": "HTTP Response Time",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
           "targets": [
             {
@@ -47,6 +49,7 @@ data:
           "id": 3,
           "title": "HTTP Error Rate (4xx + 5xx)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
           "targets": [
             {
@@ -64,6 +67,7 @@ data:
           "id": 4,
           "title": "JVM Heap Memory",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
           "targets": [
             {
@@ -81,6 +85,7 @@ data:
           "id": 5,
           "title": "GC Pause Duration",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 16, "w": 8, "h": 8 },
           "targets": [{
             "expr": "rate(jvm_gc_pause_seconds_sum{application=\"borod-bank\"}[1m])",
@@ -92,6 +97,7 @@ data:
           "id": 6,
           "title": "Active Threads",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 8, "y": 16, "w": 8, "h": 8 },
           "targets": [
             {
@@ -112,6 +118,7 @@ data:
           "id": 7,
           "title": "CPU Usage",
           "type": "gauge",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 16, "y": 16, "w": 4, "h": 8 },
           "targets": [{
             "expr": "process_cpu_usage{application=\"borod-bank\"}",
@@ -137,6 +144,7 @@ data:
           "id": 8,
           "title": "Open File Descriptors",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 20, "y": 16, "w": 4, "h": 8 },
           "targets": [
             {

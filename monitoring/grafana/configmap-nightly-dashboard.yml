@@ -11,7 +11,7 @@ data:
       "tags": ["nightly", "borod-bank", "ci"],
       "timezone": "browser",
       "schemaVersion": 36,
-      "version": 1,
+      "version": 2,
       "refresh": "",
       "time": { "from": "now-30d", "to": "now" },
       "panels": [
@@ -19,6 +19,7 @@ data:
           "id": 1,
           "title": "Build Status (30d)",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
           "targets": [{
             "expr": "nightly_build_status{job=\"nightly\"}",
@@ -46,6 +47,7 @@ data:
           "id": 2,
           "title": "Line Coverage %",
           "type": "gauge",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
           "targets": [{
             "expr": "nightly_coverage_percent{job=\"nightly\"}",
@@ -71,6 +73,7 @@ data:
           "id": 3,
           "title": "Mutation Score %",
           "type": "gauge",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
           "targets": [{
             "expr": "nightly_mutation_score_percent{job=\"nightly\"}",
@@ -96,6 +99,7 @@ data:
           "id": 4,
           "title": "Unit Tests",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 18, "y": 0, "w": 3, "h": 6 },
           "targets": [
             {
@@ -122,6 +126,7 @@ data:
           "id": 5,
           "title": "Integration Tests",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 21, "y": 0, "w": 3, "h": 6 },
           "targets": [
             {
@@ -148,6 +153,7 @@ data:
           "id": 6,
           "title": "OWASP CVEs",
           "type": "bargauge",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 6, "w": 6, "h": 6 },
           "targets": [
             {
@@ -181,6 +187,7 @@ data:
           "id": 7,
           "title": "ZAP Findings",
           "type": "bargauge",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 6, "y": 6, "w": 6, "h": 6 },
           "targets": [
             {
@@ -210,6 +217,7 @@ data:
           "id": 8,
           "title": "Response Time p95 (trend)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 6, "w": 6, "h": 6 },
           "targets": [{
             "expr": "nightly_k6_p95_ms{job=\"nightly\"}",
@@ -233,6 +241,7 @@ data:
           "id": 9,
           "title": "Build Duration (trend)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 18, "y": 6, "w": 6, "h": 6 },
           "targets": [{
             "expr": "nightly_build_duration_seconds{job=\"nightly\"}",

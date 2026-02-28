@@ -11,7 +11,7 @@ data:
       "tags": ["aiops", "borod-bank", "claude"],
       "timezone": "browser",
       "schemaVersion": 36,
-      "version": 1,
+      "version": 2,
       "refresh": "30s",
       "time": { "from": "now-1h", "to": "now" },
       "panels": [
@@ -19,6 +19,7 @@ data:
           "id": 1,
           "title": "Gateway Status",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
           "targets": [{
             "expr": "up{job=\"aiops\"}",
@@ -43,6 +44,7 @@ data:
           "id": 2,
           "title": "Pending Review Requests",
           "type": "gauge",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
           "targets": [{
             "expr": "aiops_gateway_pending_requests",
@@ -66,6 +68,7 @@ data:
           "id": 3,
           "title": "Pending Requests (trend)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
           "targets": [{
             "expr": "aiops_gateway_pending_requests",
@@ -87,6 +90,7 @@ data:
           "id": 4,
           "title": "Gateway Pod CPU",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
           "targets": [{
             "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"aiops\", image!=\"\"}[5m])) by (pod)",
@@ -98,6 +102,7 @@ data:
           "id": 5,
           "title": "Gateway Pod Memory",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
           "targets": [{
             "expr": "sum(container_memory_working_set_bytes{namespace=\"aiops\", image!=\"\"}) by (pod)",
@@ -109,6 +114,7 @@ data:
           "id": 6,
           "title": "Gateway Network Receive",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
           "targets": [{
             "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"aiops\"}[5m])) by (pod)",
@@ -120,6 +126,7 @@ data:
           "id": 7,
           "title": "Gateway Network Transmit",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
           "targets": [{
             "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"aiops\"}[5m])) by (pod)",

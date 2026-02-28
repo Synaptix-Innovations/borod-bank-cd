@@ -11,7 +11,7 @@ data:
       "tags": ["kubernetes", "infrastructure", "borod-bank"],
       "timezone": "browser",
       "schemaVersion": 36,
-      "version": 1,
+      "version": 2,
       "refresh": "30s",
       "time": { "from": "now-1h", "to": "now" },
       "panels": [
@@ -19,6 +19,7 @@ data:
           "id": 1,
           "title": "Cluster Nodes",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
           "targets": [{
             "expr": "count(kube_node_info)",
@@ -30,6 +31,7 @@ data:
           "id": 2,
           "title": "Total Pods Running",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
           "targets": [{
             "expr": "sum(kube_pod_status_phase{phase=\"Running\"})",
@@ -41,6 +43,7 @@ data:
           "id": 3,
           "title": "Pods Not Ready",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
           "targets": [{
             "expr": "sum(kube_pod_status_phase{phase=~\"Pending|Failed|Unknown\"}) or vector(0)",
@@ -61,6 +64,7 @@ data:
           "id": 4,
           "title": "Node CPU Usage",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
           "targets": [{
             "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
@@ -85,6 +89,7 @@ data:
           "id": 5,
           "title": "Node Memory Usage",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
           "targets": [{
             "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
@@ -109,6 +114,7 @@ data:
           "id": 6,
           "title": "Pod CPU Usage by Namespace",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
           "targets": [{
             "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{image!=\"\"}[5m]))",
@@ -120,6 +126,7 @@ data:
           "id": 7,
           "title": "Pod Memory Usage by Namespace",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
           "targets": [{
             "expr": "sum by (namespace) (container_memory_working_set_bytes{image!=\"\"})",
@@ -131,6 +138,7 @@ data:
           "id": 8,
           "title": "Network I/O (Receive)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 16, "w": 6, "h": 8 },
           "targets": [{
             "expr": "sum by (instance) (rate(node_network_receive_bytes_total{device!~\"lo|veth.*|docker.*|flannel.*|cali.*\"}[5m]))",
@@ -142,6 +150,7 @@ data:
           "id": 9,
           "title": "Network I/O (Transmit)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 18, "y": 16, "w": 6, "h": 8 },
           "targets": [{
             "expr": "sum by (instance) (rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|docker.*|flannel.*|cali.*\"}[5m]))",
@@ -153,6 +162,7 @@ data:
           "id": 10,
           "title": "Filesystem Usage",
           "type": "bargauge",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
           "targets": [{
             "expr": "100 * (1 - node_filesystem_avail_bytes{fstype=~\"ext4|xfs\"} / node_filesystem_size_bytes{fstype=~\"ext4|xfs\"})",
@@ -178,6 +188,7 @@ data:
           "id": 11,
           "title": "Top 10 Pods by CPU",
           "type": "table",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
           "targets": [{
             "expr": "topk(10, sum by (namespace, pod) (rate(container_cpu_usage_seconds_total{image!=\"\"}[5m])))",
@@ -193,6 +204,7 @@ data:
           "id": 12,
           "title": "Top 10 Pods by Memory",
           "type": "table",
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
           "targets": [{
             "expr": "topk(10, sum by (namespace, pod) (container_memory_working_set_bytes{image!=\"\"}))",
