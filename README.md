@@ -14,7 +14,7 @@ Kubernetes manifests and **ArgoCD App of Apps** configuration for the Borod Bank
 ┌────────────────────────────────────────────────────────────────────┐
 │                         CD / GitOps Flow                           │
 │                                                                    │
-│  Jenkins CI ──► git push (new image tag in app/deployment.yml)    │
+│  Jenkins CI ──► git push (new image tag in app/deployment.yml)     │
 │       │                                                            │
 │       ▼                                                            │
 │  ArgoCD detects change ──► Auto-sync                               │
