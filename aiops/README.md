@@ -13,39 +13,39 @@ AI-powered operations module providing **automated code review** on every CI bui
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                        namespace: aiops                                   │
-│                                                                           │
-│  ┌────────────────────────────────────────────────────────────────────┐   │
-│  │  COMPONENT 1: AIOps Gateway (always running)                       │   │
-│  │                                                                    │   │
+│                        namespace: aiops                                  │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │  COMPONENT 1: AIOps Gateway (always running)                       │  │
+│  │                                                                    │  │
 │  │  Jenkins CI ──► POST /review ──► FastAPI ──► Claude API (Haiku)   │   │
-│  │       │              │                            │                │   │
+│  │       │              │                            │                │  │
 │  │       │         code diff +                 security issues,      │   │
 │  │       │         build context               quality feedback,     │   │
 │  │       │                                     recommendations       │   │
 │  │       ◄────────────── JSON response ─────────────┘                │   │
-│  │                                                                    │   │
+│  │                                                                    │  │
 │  │  Prometheus ◄── GET /metrics (aiops_gateway_pending_requests)     │   │
-│  └────────────────────────────────────────────────────────────────────┘   │
-│                                                                           │
-│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
 │  │  COMPONENT 2: Log Analyzer CronJob (daily at 3:00 UTC)            │   │
-│  │                                                                    │   │
+│  │                                                                    │  │
 │  │  Loki ──► query ERROR logs ──► deduplicate ──► Claude API (Haiku) │   │
 │  │  (last 24h, up to 500)    (MD5 fingerprint,      │                │   │
-│  │                            max 10 unique)         ▼                │   │
-│  │                                              Slack webhook         │   │
-│  │                                              (daily report)        │   │
-│  └────────────────────────────────────────────────────────────────────┘   │
-│                                                                           │
-│  ┌────────────────────────────────────────────────────────────────────┐   │
-│  │  SECRETS (External Secrets Operator → AWS Secrets Manager)         │   │
-│  │                                                                    │   │
-│  │  borod-bank/aiops    → ANTHROPIC_API_KEY  → aiops-anthropic-secret │   │
-│  │  borod-bank/jenkins  → SLACK_WEBHOOK_URL  → aiops-slack-secret     │   │
-│  └────────────────────────────────────────────────────────────────────┘   │
-│                                                                           │
-│  GUARDS: ResourceQuota (5 pods, 2 CPU, 2Gi) + LimitRange per container  │
+│  │                            max 10 unique)         ▼                │  │
+│  │                                              Slack webhook         │  │
+│  │                                              (daily report)        │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │  SECRETS (External Secrets Operator → AWS Secrets Manager)         │  │
+│  │                                                                    │  │
+│  │  borod-bank/aiops    → ANTHROPIC_API_KEY  → aiops-anthropic-secret │  │
+│  │  borod-bank/jenkins  → SLACK_WEBHOOK_URL  → aiops-slack-secret     │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+│                                                                          │
+│  GUARDS: ResourceQuota (5 pods, 2 CPU, 2Gi) + LimitRange per container   │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
